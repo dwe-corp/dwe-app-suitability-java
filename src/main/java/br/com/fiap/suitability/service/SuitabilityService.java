@@ -23,10 +23,20 @@ public class SuitabilityService {
 
         Risco risco = AvaliadorPerfilRisco.avaliar(c, m, a);
 
-        PerfilSuitability perfil = new PerfilSuitability();
-        perfil.setNome(req.getNome());
-        perfil.setEmail(req.getEmail());
-        perfil.setRisco(risco);
+        Optional<PerfilSuitability> existente = repository.findByEmail(req.getEmail());
+
+        PerfilSuitability perfil;
+
+        if (existente.isPresent()) {
+            perfil = existente.get();
+            perfil.setNome(req.getNome());
+            perfil.setRisco(risco);
+        } else {
+            perfil = new PerfilSuitability();
+            perfil.setNome(req.getNome());
+            perfil.setEmail(req.getEmail());
+            perfil.setRisco(risco);
+        }
 
         repository.save(perfil);
 
@@ -35,6 +45,7 @@ public class SuitabilityService {
         response.put("recomendacao", AvaliadorPerfilRisco.recomendarCarteira(risco));
         return response;
     }
+
 
     public List<PerfilSuitability> listar() {
         return repository.findAll();
