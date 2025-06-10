@@ -47,8 +47,6 @@ Authorization: Bearer <seu-token>
 
 ```json
 {
-  "nome": "João Prudente",
-  "email": "joao@email.com",
   "respostasConservadoras": 6,
   "respostasModeradas": 2,
   "respostasAgressivas": 1
