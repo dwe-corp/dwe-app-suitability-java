@@ -34,4 +34,16 @@ public class SuitabilityController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @GetMapping(params = "email")
+    public ResponseEntity<List<PerfilSuitability>> buscarPorEmail(@RequestParam String email) {
+        List<PerfilSuitability> perfis = service.buscarPorEmail(email);
+
+        if (perfis.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(perfis);
+    }
+
 }

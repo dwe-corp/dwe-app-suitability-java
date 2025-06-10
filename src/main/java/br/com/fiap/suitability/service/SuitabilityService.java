@@ -54,4 +54,9 @@ public class SuitabilityService {
     public Optional<PerfilSuitability> buscarPorId(Long id) {
         return repository.findById(id);
     }
+
+    public List<PerfilSuitability> buscarPorEmail(String email) {
+        return repository.findAllByEmail(email);
+    }
+
 }
