@@ -24,6 +24,8 @@ public class SuitabilityService {
         Risco risco = AvaliadorPerfilRisco.avaliar(c, m, a);
 
         PerfilSuitability perfil = new PerfilSuitability();
+        perfil.setNome(req.getNome());
+        perfil.setEmail(req.getEmail());
         perfil.setRisco(risco);
 
         repository.save(perfil);
