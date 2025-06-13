@@ -15,6 +15,8 @@ Esta API realiza a **avaliação de perfil de risco de investidores** com base e
 - Lombok
 - Swagger (OpenAPI)
 - Maven
+- SLF4J (Logs)
+- GitHub Actions + Semgrep (SAST)
 
 ---
 
@@ -24,10 +26,14 @@ Esta API realiza a **avaliação de perfil de risco de investidores** com base e
 - Retorno do perfil de risco (`CONSERVADOR`, `MODERADO`, `AGRESSIVO`)
 - Regras de recomendação de carteira por perfil
 - Validação de campos obrigatórios e formatos
-- Token JWT obrigatório (exceto Swagger e login)
+- Tratamento global de exceções com mensagens amigáveis e logs
+- Geração de logs em todos os pontos críticos (controller, service, exceptions)
+- Token JWT obrigatório (exceto Swagger)
 - Listagem de avaliações realizadas (`GET /suitability`)
 - Consulta individual (`GET /suitability/{id}`)
+- Busca por e-mail (`GET /suitability?email=...`)
 - Proteção de rotas via filtro JWT
+- Análise estática automatizada com Semgrep
 
 ---
 
@@ -59,8 +65,13 @@ Authorization: Bearer <seu-token>
 
 ```json
 {
-  "risco": "CONSERVADOR",
-  "recomendacoes": [
+  "cliente": {
+    "id": 1,
+    "nome": "João Prudente",
+    "email": "joao@email.com",
+    "risco": "CONSERVADOR"
+  },
+  "recomendacao": [
     { "tipo": "Renda Fixa", "percentual": 80 },
     { "tipo": "Fundos Multimercado", "percentual": 15 },
     { "tipo": "Renda Variável", "percentual": 5 }
@@ -91,11 +102,12 @@ A lógica compara as quantidades de respostas e define o perfil conforme o núme
 
 ## 📂 Rotas disponíveis
 
-| Método | Rota               | Protegida | Descrição                          |
-|--------|--------------------|-----------|------------------------------------|
-| POST   | `/suitability`     | ✅        | Avaliar e salvar perfil de risco   |
-| GET    | `/suitability`     | ✅        | Listar todos os perfis avaliados   |
-| GET    | `/suitability/{id}`| ✅        | Buscar perfil por ID               |
+| Método | Rota                   | Protegida | Descrição                          |
+|--------|------------------------|-----------|------------------------------------|
+| POST   | `/suitability`         | ✅        | Avaliar e salvar perfil de risco   |
+| GET    | `/suitability`         | ✅        | Listar todos os perfis avaliados   |
+| GET    | `/suitability/{id}`    | ✅        | Buscar perfil por ID               |
+| GET    | `/suitability?email=...` | ✅      | Buscar perfil por e-mail           |
 
 ---
 
@@ -115,19 +127,29 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
 
 ```
 src/
-├── config/
-├── controller/
-├── dto/
-├── model/
-├── repository/
-├── security/
-├── service/
-├── util/
+├── config/         → Handler de exceções globais
+├── controller/     → Endpoints da API
+├── dto/            → DTOs de entrada
+├── model/          → Entidades JPA (PerfilSuitability)
+├── repository/     → Interface JPA
+├── security/       → Filtro JWT
+├── service/        → Lógica de avaliação com logs
+├── util/           → Lógica de recomendação de carteira
 └── SuitabilityApplication.java
 ```
 
 ---
 
+## 📋 Segurança e Observabilidade
+
+- ✅ Validação de entradas com Bean Validation (`@Valid`)
+- ✅ Tratamento de erros com mensagens claras
+- ✅ Logs com SLF4J em controller, service e exception handler
+- ✅ Proteção com JWT
+- ✅ Análise estática automatizada com Semgrep (`.github/workflows/semgrep.yml`)
+
+---
+
 ## 🧑‍💻 Desenvolvido por
 
-Projeto acadêmico para avaliação de microserviços com autenticação JWT, seguindo arquitetura modular e documentação Swagger.
+Projeto acadêmico para avaliação de microserviços com autenticação JWT, seguindo arquitetura modular, segurança e boas práticas de observabilidade.
