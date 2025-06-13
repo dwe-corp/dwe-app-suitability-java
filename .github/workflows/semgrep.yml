@@ -1,5 +1,3 @@
-# .github/workflows/semgrep.yml
-
 name: Semgrep Code Scan
 
 on:
@@ -19,4 +17,4 @@ jobs:
       - name: Run Semgrep
         uses: returntocorp/semgrep-action@v1
         with:
-          config: auto  # Ou use "p/owasp-top-ten" para foco em segurança
+          config: auto
