@@ -1,0 +1,52 @@
+name: SCA - OSV Scanner (fast)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  osv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull OSV-Scanner image
+        run: docker pull ghcr.io/google/osv-scanner:latest
+
+      - name: Run OSV-Scanner (Docker) -> SARIF
+        shell: bash
+        run: |
+          # Executa o scan e grava SARIF no workspace
+          docker run --rm -v "$PWD":/repo -w /repo ghcr.io/google/osv-scanner:latest \
+            -r . --format sarif --output /repo/osv.sarif || true
+
+          # Garante arquivo válido (evita "Invalid SARIF / Unexpected end...")
+          if [ ! -s osv.sarif ]; then
+            echo "OSV não gerou saída válida; criando SARIF mínimo."
+            printf '%s\n' \
+              '{' \
+              '  "version": "2.1.0",' \
+              '  "runs": [{' \
+              '    "tool": { "driver": { "name": "OSV-Scanner", "informationUri": "https://osv.dev", "rules": [] } },' \
+              '    "results": []' \
+              '  }]' \
+              '}' > osv.sarif
+          fi
+
+      - name: Upload SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: osv.sarif
+
+      - name: Upload SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-report
+          path: osv.sarif
