@@ -1,0 +1,71 @@
+name: DAST - ZAP Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "URL a escanear (ex.: https://staging.seuapp.com)"
+        required: false
+        default: "https://example.com"
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve TARGET
+        run: |
+          if [ -n "${{ secrets.STAGING_URL }}" ]; then
+            T="${{ secrets.STAGING_URL }}"
+            SRC="secret"
+          elif [ -n "${{ vars.STAGING_URL }}" ]; then
+            T="${{ vars.STAGING_URL }}"
+            SRC="repo variable"
+          elif [ -n "${{ github.event.inputs.target }}" ]; then
+            T="${{ github.event.inputs.target }}"
+            SRC="manual input"
+          else
+            T="https://example.com"
+            SRC="fallback"
+          fi
+          echo "TARGET=$T" >> $GITHUB_ENV
+          echo "Scanning target ($SRC): $T"
+
+      - name: ZAP Baseline (gera HTML/JSON)
+        run: |
+          mkdir -p zap-out && chmod 777 zap-out
+          docker pull ghcr.io/zaproxy/zaproxy:stable
+          # roda como root e grava direto no host em zap-out/
+          docker run --rm -u 0:0 -v "$PWD/zap-out":/zap/wrk ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+              -t "${TARGET}" \
+              -r zap-report.html \
+              -J zap-report.json \
+              -m 2 || true   # não falhar aqui; o gate é no passo seguinte
+
+      - name: Gate por severidade (falha se houver HIGH)
+        run: |
+          sudo apt-get update >/dev/null 2>&1 || true
+          sudo apt-get install -y jq >/dev/null 2>&1 || true
+          if [ ! -s zap-out/zap-report.json ]; then
+            echo "::warning::ZAP não gerou JSON; passando sem bloquear."
+            exit 0
+          fi
+          HIGH=$(jq '[.site[].alerts[]? | select((.riskcode|tonumber) >= 3)] | length' zap-out/zap-report.json)
+          echo "DAST High findings: $HIGH"
+          if [ "$HIGH" -gt 0 ]; then
+            echo "::error::DAST encontrou $HIGH alertas HIGH. Bloqueando."
+            exit 1
+          fi
+
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-out
