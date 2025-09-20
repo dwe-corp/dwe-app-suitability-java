@@ -4,6 +4,14 @@ Esta API realiza a avaliação de perfil de risco de investidores com base em re
 
 ⸻
 
+🤝 *Autores*
+
+- Eduardo Akira Murata (RM98713)
+- Deivison Pertel (RM550803)
+- Wesley Souza de Oliveira (RM97874)
+
+⸻
+
 🔧 Tecnologias
 	•	Java 21
 	•	Spring Boot 3+
